@@ -1,0 +1,54 @@
+[
+  {
+    "id": "INC-101",
+    "title": "Card payments timed out during checkout",
+    "keywords": ["payment", "payments", "card", "cards", "checkout", "timeout", "timeouts", "provider", "pay"],
+    "category": "PAYMENT",
+    "summary": "Customers could not complete card payments because payment-service calls to the external provider timed out.",
+    "rootCause": "External payment provider latency exceeded payment-service timeout thresholds.",
+    "remediation": [
+      "Check payment provider status page and latency metrics",
+      "Inspect payment-service timeout and retry logs",
+      "Temporarily route traffic to fallback provider if available"
+    ]
+  },
+  {
+    "id": "INC-102",
+    "title": "Reporting queries saturated database CPU",
+    "keywords": ["db", "database", "postgres", "postgresql", "cpu", "reporting", "query", "queries", "dashboard", "dashboards", "504", "gateway"],
+    "category": "DATABASE",
+    "summary": "Response time for /payments/create increased because reporting-service long-running queries saturated PostgreSQL CPU.",
+    "rootCause": "Reporting-service analytical queries put extra load on the database used by payment traffic.",
+    "remediation": [
+      "Inspect top database queries and CPU metrics",
+      "Check reporting-service query volume and long-running query logs",
+      "Temporarily pause or throttle expensive reporting jobs"
+    ]
+  },
+  {
+    "id": "INC-103",
+    "title": "SMTP delivery failures delayed top-up confirmations",
+    "keywords": ["smtp", "email", "emails", "notification", "notifications", "receipt", "receipts", "mail", "top", "up", "confirmation", "confirmations"],
+    "category": "NOTIFICATION",
+    "summary": "Users did not receive top-up confirmation emails even though money was credited successfully.",
+    "rootCause": "Notification-service had intermittent connection errors to the external SMTP provider.",
+    "remediation": [
+      "Check notification-service SMTP connection error logs",
+      "Validate SMTP provider status and connection limits",
+      "Replay failed confirmation email jobs after delivery recovers"
+    ]
+  },
+  {
+    "id": "INC-104",
+    "title": "Authentication token validation returned 401",
+    "keywords": ["auth", "authentication", "login", "token", "tokens", "401", "session", "sessions"],
+    "category": "AUTHENTICATION",
+    "summary": "Customers and merchants received 401 responses because auth-service rejected valid access tokens.",
+    "rootCause": "Token signing key rotation propagated to token issuers before validators refreshed their key cache.",
+    "remediation": [
+      "Check auth-service key cache refresh status",
+      "Compare issuer and validator key identifiers",
+      "Roll back signing key or force validator cache refresh"
+    ]
+  }
+]
