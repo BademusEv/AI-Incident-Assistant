@@ -68,6 +68,18 @@ class PiiScrubberTest {
     }
 
     @Test
+    void masksLongUserIdBeforePhonePattern() {
+        ParsedIncident incident = incident("Customer user_id=12345678 reports payment failure.");
+
+        ParsedIncident scrubbed = piiScrubber.scrub(incident);
+
+        assertThat(scrubbed.normalizedDescription())
+                .contains("[USER_ID]")
+                .doesNotContain("user_id=[PHONE]")
+                .doesNotContain("user_id=12345678");
+    }
+
+    @Test
     void returnsIncidentWhenNormalizedDescriptionIsNull() {
         ParsedIncident incident = new ParsedIncident(null, Set.of("payment"));
 

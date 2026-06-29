@@ -44,8 +44,8 @@ public class PiiScrubber {
         scrubbedDescription = replace(scrubbedDescription, PASSPORT_NUMERIC_CONTEXT_PATTERN, "[PASSPORT_NUMBER]", maskedTokens);
         scrubbedDescription = replace(scrubbedDescription, PASSPORT_RU_STANDALONE_PATTERN, "[PASSPORT_NUMBER]", maskedTokens);
         scrubbedDescription = replace(scrubbedDescription, SSN_PATTERN, "[SSN]", maskedTokens);
-        scrubbedDescription = replace(scrubbedDescription, PHONE_PATTERN, "[PHONE]", maskedTokens);
         scrubbedDescription = replace(scrubbedDescription, USER_ID_PATTERN, "[USER_ID]", maskedTokens);
+        scrubbedDescription = replace(scrubbedDescription, PHONE_PATTERN, "[PHONE]", maskedTokens);
 
         int count = maskedTokens.get();
         if (count > 0) {
