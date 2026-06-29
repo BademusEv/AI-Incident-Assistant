@@ -54,8 +54,6 @@ Response:
 {
   "category": "PAYMENT",
   "severity": "HIGH",
-  "confidence": "HIGH",
-  "needsHumanReview": false,
   "summary": "Customers cannot complete card payments because payment-service is timing out against the provider.",
   "hypotheses": [
     {
@@ -67,7 +65,9 @@ Response:
       ]
     }
   ],
-  "contextReferences": ["INC-101"]
+  "contextReferences": ["INC-101"],
+  "confidence": "HIGH",
+  "needsHumanReview": false
 }
 ```
 
@@ -95,7 +95,7 @@ The prompt is split into separate system and user messages:
 
 The current incident is wrapped as untrusted data. Instructions inside the incident description must not override system instructions.
 
-Before the current incident is added to the prompt, `PiiScrubber` masks common PII-like values in the normalized incident text: card numbers, e-mail addresses, phone numbers, user/account identifiers, and IP addresses. Retrieval keywords are extracted before scrubbing and remain unchanged, so deterministic context selection still works from the original incident terms.
+Before the current incident is added to the prompt, `PiiScrubber` masks common PII-like values in the normalized incident text: card numbers, e-mail addresses, phone numbers, user/account identifiers, IP addresses, passport numbers, and US Social Security numbers. Retrieval keywords are extracted before scrubbing and remain unchanged, so deterministic context selection still works from the original incident terms.
 
 The service still validates the result in Java:
 
