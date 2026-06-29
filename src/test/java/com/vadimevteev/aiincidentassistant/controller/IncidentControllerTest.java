@@ -3,6 +3,7 @@ package com.vadimevteev.aiincidentassistant.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vadimevteev.aiincidentassistant.exception.AiProviderException;
 import com.vadimevteev.aiincidentassistant.exception.IncidentAnalysisFailedException;
+import com.vadimevteev.aiincidentassistant.model.AnalysisConfidence;
 import com.vadimevteev.aiincidentassistant.model.Hypothesis;
 import com.vadimevteev.aiincidentassistant.model.IncidentCategory;
 import com.vadimevteev.aiincidentassistant.model.IncidentResponse;
@@ -58,7 +59,9 @@ class IncidentControllerTest {
                         "The incident mentions card payments and provider timeouts.",
                         List.of("Check provider latency metrics")
                 )),
-                List.of("INC-101")
+                List.of("INC-101"),
+                AnalysisConfidence.HIGH,
+                false
         ));
 
         mockMvc.perform(post("/api/incidents/analyze")
@@ -67,6 +70,8 @@ class IncidentControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.category").value("PAYMENT"))
                 .andExpect(jsonPath("$.severity").value("HIGH"))
+                .andExpect(jsonPath("$.confidence").value("HIGH"))
+                .andExpect(jsonPath("$.needsHumanReview").value(false))
                 .andExpect(jsonPath("$.contextReferences[0]").value("INC-101"));
     }
 

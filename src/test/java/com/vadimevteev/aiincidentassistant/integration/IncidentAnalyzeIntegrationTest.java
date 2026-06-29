@@ -71,4 +71,22 @@ class IncidentAnalyzeIntegrationTest extends BaseIntegrationTest {
                 .doesNotContain("raw model text")
                 .doesNotContain("system prompt");
     }
+
+    @Test
+    void scrubsPiiBeforeSendingCurrentIncidentToPrompt() throws Exception {
+        when(incidentAiClient.analyze(any()))
+                .thenReturn(validAnalysis(IncidentCategory.PAYMENT));
+
+        analyze("Customer john.doe@example.com cannot pay by card 4111-1111-1111-1111 due to checkout timeout.")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.contextReferences[0]").value("INC-101"));
+
+        ArgumentCaptor<IncidentPrompt> promptCaptor = promptCaptor();
+        verify(incidentAiClient).analyze(promptCaptor.capture());
+        assertThat(promptCaptor.getValue().userMessage())
+                .contains("[EMAIL]")
+                .contains("[CARD_NUMBER]")
+                .doesNotContain("john.doe@example.com")
+                .doesNotContain("4111-1111-1111-1111");
+    }
 }

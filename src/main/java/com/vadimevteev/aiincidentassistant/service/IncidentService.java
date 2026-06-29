@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 public class IncidentService {
 
     private final InputParser inputParser;
+    private final PiiScrubber piiScrubber;
     private final ContextProvider contextProvider;
     private final PromptBuilder promptBuilder;
     private final IncidentAiClient incidentAiClient;
@@ -31,6 +32,7 @@ public class IncidentService {
 
     public IncidentService(
             InputParser inputParser,
+            PiiScrubber piiScrubber,
             ContextProvider contextProvider,
             PromptBuilder promptBuilder,
             IncidentAiClient incidentAiClient,
@@ -39,6 +41,7 @@ public class IncidentService {
             @Value("${incident-assistant.retry.max-attempts:2}") int maxAttempts
     ) {
         this.inputParser = inputParser;
+        this.piiScrubber = piiScrubber;
         this.contextProvider = contextProvider;
         this.promptBuilder = promptBuilder;
         this.incidentAiClient = incidentAiClient;
@@ -49,6 +52,7 @@ public class IncidentService {
 
     public IncidentResponse analyze(IncidentRequest request) {
         ParsedIncident parsedIncident = inputParser.parse(request.description());
+        parsedIncident = piiScrubber.scrub(parsedIncident);
         IncidentContext context = contextProvider.findRelevantContext(parsedIncident);
 
         String validationError = null;
@@ -62,7 +66,7 @@ public class IncidentService {
                 responseValidator.validate(analysis);
                 securityPolicyValidator.validate(analysis);
                 log.info("Incident analysis succeeded on attempt {} with context {}", attempt, context.references());
-                return IncidentResponse.from(analysis, context.references());
+                return IncidentResponse.from(analysis, context.references(), context.topMatchScore());
             } catch (InvalidAiResponseException e) {
                 validationError = e.safeRetryMessage();
                 log.warn("Incident analysis attempt {} failed with safe validation code {}", attempt, validationError);

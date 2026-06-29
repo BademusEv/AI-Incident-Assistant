@@ -31,6 +31,33 @@ class ContextProviderTest {
     }
 
     @Test
+    void strongMatchExposesHighTopMatchScore() {
+        IncidentContext context = contextProvider.findRelevantContext(
+                inputParser.parse("payment card checkout timeout")
+        );
+
+        assertThat(context.topMatchScore()).isGreaterThanOrEqualTo(3);
+    }
+
+    @Test
+    void weakMatchExposesSingleTopMatchScore() {
+        IncidentContext context = contextProvider.findRelevantContext(
+                inputParser.parse("smtp")
+        );
+
+        assertThat(context.topMatchScore()).isEqualTo(1);
+    }
+
+    @Test
+    void noMatchExposesZeroTopMatchScore() {
+        IncidentContext context = contextProvider.findRelevantContext(
+                inputParser.parse("several users report a strange intermittent issue")
+        );
+
+        assertThat(context.topMatchScore()).isZero();
+    }
+
+    @Test
     void selectsNotificationIncidentForSmtpFailures() {
         IncidentContext context = contextProvider.findRelevantContext(
                 inputParser.parse("SMTP errors prevent notification emails and receipts from being delivered.")

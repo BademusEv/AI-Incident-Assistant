@@ -4,8 +4,6 @@ import com.vadimevteev.aiincidentassistant.model.IncidentCategory;
 import com.vadimevteev.aiincidentassistant.model.IncidentResponse;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -22,6 +20,8 @@ class IncidentContextIntegrationTest extends BaseIntegrationTest {
         analyze("Customers cannot pay by card during checkout because payment timeout rate is high.")
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.category").value("PAYMENT"))
+                .andExpect(jsonPath("$.confidence").value("HIGH"))
+                .andExpect(jsonPath("$.needsHumanReview").value(false))
                 .andExpect(jsonPath("$.contextReferences[0]").value("INC-101"));
     }
 
@@ -113,6 +113,50 @@ class IncidentContextIntegrationTest extends BaseIntegrationTest {
                 .containsExactly("INC-101");
     }
 
+    @Test
+    void strongKeywordMatchReturnsHighConfidence() throws Exception {
+        when(incidentAiClient.analyze(any()))
+                .thenReturn(validAnalysis(IncidentCategory.PAYMENT));
+
+        analyze("payment card checkout timeout")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.confidence").value("HIGH"))
+                .andExpect(jsonPath("$.needsHumanReview").value(false));
+    }
+
+    @Test
+    void partialKeywordMatchReturnsMediumConfidence() throws Exception {
+        when(incidentAiClient.analyze(any()))
+                .thenReturn(validAnalysis(IncidentCategory.NOTIFICATION));
+
+        analyze("smtp")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.confidence").value("MEDIUM"))
+                .andExpect(jsonPath("$.needsHumanReview").value(false));
+    }
+
+    @Test
+    void noKeywordMatchReturnsLowConfidenceAndNeedsHumanReview() throws Exception {
+        when(incidentAiClient.analyze(any()))
+                .thenReturn(validAnalysis(IncidentCategory.INFRASTRUCTURE));
+
+        analyze("Several users report a strange intermittent issue in the platform.")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.confidence").value("LOW"))
+                .andExpect(jsonPath("$.needsHumanReview").value(true));
+    }
+
+    @Test
+    void unknownCategoryNeedsHumanReviewRegardlessOfConfidence() throws Exception {
+        when(incidentAiClient.analyze(any()))
+                .thenReturn(validAnalysis(IncidentCategory.UNKNOWN));
+
+        analyze("payment card checkout timeout")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.confidence").value("HIGH"))
+                .andExpect(jsonPath("$.needsHumanReview").value(true));
+    }
+
     private IncidentResponse analyzeAndReadResponse(String description) throws Exception {
         String json = analyze(description)
                 .andExpect(status().isOk())
@@ -120,13 +164,6 @@ class IncidentContextIntegrationTest extends BaseIntegrationTest {
                 .getResponse()
                 .getContentAsString();
 
-        IncidentResponse response = objectMapper.readValue(json, IncidentResponse.class);
-        return new IncidentResponse(
-                response.category(),
-                response.severity(),
-                response.summary(),
-                response.hypotheses(),
-                List.copyOf(response.contextReferences())
-        );
+        return objectMapper.readValue(json, IncidentResponse.class);
     }
 }

@@ -8,6 +8,7 @@ import com.vadimevteev.aiincidentassistant.context.IncidentContext;
 import com.vadimevteev.aiincidentassistant.context.PastIncident;
 import com.vadimevteev.aiincidentassistant.exception.IncidentAnalysisFailedException;
 import com.vadimevteev.aiincidentassistant.exception.InvalidAiResponseException;
+import com.vadimevteev.aiincidentassistant.model.AnalysisConfidence;
 import com.vadimevteev.aiincidentassistant.model.Hypothesis;
 import com.vadimevteev.aiincidentassistant.model.IncidentAnalysis;
 import com.vadimevteev.aiincidentassistant.model.IncidentCategory;
@@ -44,6 +45,7 @@ class IncidentServiceTest {
         );
         incidentService = new IncidentService(
                 new InputParser(),
+                new PiiScrubber(),
                 contextProvider,
                 new PromptBuilder(),
                 incidentAiClient,
@@ -53,7 +55,7 @@ class IncidentServiceTest {
         );
 
         when(contextProvider.findRelevantContext(any()))
-                .thenReturn(new IncidentContext("system", List.of(paymentIncident())));
+                .thenReturn(new IncidentContext("system", List.of(paymentIncident()), 2));
     }
 
     @Test
@@ -65,6 +67,7 @@ class IncidentServiceTest {
         );
 
         assertThat(response.category()).isEqualTo(IncidentCategory.PAYMENT);
+        assertThat(response.confidence()).isEqualTo(AnalysisConfidence.MEDIUM);
         assertThat(response.contextReferences()).containsExactly("INC-101");
         verify(incidentAiClient).analyze(any());
     }

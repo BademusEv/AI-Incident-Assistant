@@ -49,16 +49,20 @@ public class ContextProvider {
     public IncidentContext findRelevantContext(ParsedIncident incident) {
         Set<String> inputKeywords = incident.keywords();
 
-        List<PastIncident> relevantIncidents = pastIncidents.stream()
+        List<ScoredIncident> scoredIncidents = pastIncidents.stream()
                 .map(pastIncident -> new ScoredIncident(pastIncident, score(pastIncident, inputKeywords)))
                 .filter(scoredIncident -> scoredIncident.score() > 0)
                 .sorted(Comparator.comparingInt(ScoredIncident::score).reversed()
                         .thenComparing(scoredIncident -> scoredIncident.incident().id()))
                 .limit(MAX_RELEVANT_INCIDENTS)
-                .map(ScoredIncident::incident)
                 .toList();
 
-        return new IncidentContext(systemDescription, relevantIncidents);
+        List<PastIncident> relevantIncidents = scoredIncidents.stream()
+                .map(ScoredIncident::incident)
+                .toList();
+        int maxScore = scoredIncidents.isEmpty() ? 0 : scoredIncidents.get(0).score();
+
+        return new IncidentContext(systemDescription, relevantIncidents, maxScore);
     }
 
     private int score(PastIncident pastIncident, Set<String> inputKeywords) {

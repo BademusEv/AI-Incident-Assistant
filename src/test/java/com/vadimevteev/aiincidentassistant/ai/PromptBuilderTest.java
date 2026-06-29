@@ -26,7 +26,8 @@ class PromptBuilderTest {
                         "payment-service calls timed out",
                         "provider latency",
                         List.of("Check provider status")
-                ))
+                )),
+                2
         );
 
         IncidentPrompt prompt = promptBuilder.build(
@@ -53,7 +54,7 @@ class PromptBuilderTest {
     void retryPromptContainsValidationError() {
         IncidentPrompt prompt = promptBuilder.buildRetryPrompt(
                 inputParser.parse("Customers cannot pay by card."),
-                new IncidentContext("system", List.of()),
+                new IncidentContext("system", List.of(), 0),
                 "AI_OUTPUT_INVALID"
         );
 

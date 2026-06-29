@@ -11,6 +11,7 @@ POST /api/incidents/analyze
   -> IncidentController
   -> IncidentService
   -> InputParser
+  -> PiiScrubber
   -> ContextProvider
   -> PromptBuilder
   -> IncidentAiClient
@@ -53,6 +54,8 @@ Response:
 {
   "category": "PAYMENT",
   "severity": "HIGH",
+  "confidence": "HIGH",
+  "needsHumanReview": false,
   "summary": "Customers cannot complete card payments because payment-service is timing out against the provider.",
   "hypotheses": [
     {
@@ -79,6 +82,8 @@ Response:
 
 This is intentionally simple and testable. In production, this component is the natural replacement point for embedding search, vector storage, or a fuller RAG pipeline.
 
+Confidence is a deterministic retrieval signal, not model-calibrated probability. HIGH: top context match score >= 3. MEDIUM: score >= 1. LOW: no context matched.
+
 ## Structured Output And Recovery
 
 The LLM returns an `IncidentAnalysis` DTO through Spring AI `ChatClient.entity(...)`.
@@ -89,6 +94,8 @@ The prompt is split into separate system and user messages:
 - user message: system description, retrieved incidents, retry note, and current incident data
 
 The current incident is wrapped as untrusted data. Instructions inside the incident description must not override system instructions.
+
+Before the current incident is added to the prompt, `PiiScrubber` masks common PII-like values in the normalized incident text: card numbers, e-mail addresses, phone numbers, user/account identifiers, and IP addresses. Retrieval keywords are extracted before scrubbing and remain unchanged, so deterministic context selection still works from the original incident terms.
 
 The service still validates the result in Java:
 
@@ -161,6 +168,7 @@ Implemented for this demo:
 
 - system/user prompt separation
 - untrusted incident data delimiters
+- PII scrubbing before prompt construction
 - deterministic context retrieval
 - structured output validation
 - prompt-injection and leakage phrase rejection

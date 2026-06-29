@@ -4,7 +4,8 @@ import java.util.List;
 
 public record IncidentContext(
         String systemDescription,
-        List<PastIncident> relevantIncidents
+        List<PastIncident> relevantIncidents,
+        int topMatchScore
 ) {
     public List<String> references() {
         return relevantIncidents.stream()
