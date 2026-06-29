@@ -50,5 +50,44 @@
       "Compare issuer and validator key identifiers",
       "Roll back signing key or force validator cache refresh"
     ]
+  },
+  {
+    "id": "INC-105",
+    "title": "Kubernetes OOM kills caused repeated pod restarts",
+    "keywords": ["kubernetes", "k8s", "pod", "pods", "oom", "memory", "container", "containers", "restart", "restarts", "node", "nodes", "eviction", "crash", "crashes", "kill", "killed", "limits", "resources"],
+    "category": "INFRASTRUCTURE",
+    "summary": "Payment-service and checkout-service pods restarted repeatedly because containers exceeded their memory limits and were OOM-killed by the Kubernetes scheduler.",
+    "rootCause": "A recent configuration change increased request concurrency without adjusting container memory limits, causing containers to breach limits under sustained load.",
+    "remediation": [
+      "Check Kubernetes pod OOM events with kubectl describe pod and memory usage metrics",
+      "Review and increase container memory limits or reduce request concurrency settings",
+      "Add memory utilization alerts to detect containers approaching limits before OOM occurs"
+    ]
+  },
+  {
+    "id": "INC-106",
+    "title": "Expired TLS certificate broke external API connections",
+    "keywords": ["tls", "ssl", "certificate", "certificates", "cert", "certs", "expired", "expiry", "expiration", "handshake", "https", "443", "connection", "connections", "dns", "renewal", "acme"],
+    "category": "INFRASTRUCTURE",
+    "summary": "External clients and partner integrations received TLS handshake errors because the API gateway certificate expired without automated renewal.",
+    "rootCause": "The cert-manager ACME renewal process silently failed after a DNS validation configuration change, allowing the certificate to expire undetected.",
+    "remediation": [
+      "Renew or reissue the expired certificate immediately via cert-manager or manual issuance",
+      "Fix the ACME DNS-01 challenge configuration and verify renewal pipeline end-to-end",
+      "Add certificate expiry monitoring with alerts triggered at 30, 14, and 7 days before expiry"
+    ]
+  },
+  {
+    "id": "INC-107",
+    "title": "Platform-wide latency spike with no single identifiable cause",
+    "keywords": ["latency", "degradation", "spike", "p99", "p95", "cascade", "cascading", "flapping", "routing", "zone", "zones", "cross"],
+    "category": "UNKNOWN",
+    "summary": "Multiple services across the platform showed elevated p95 and p99 latency simultaneously with no clear single root cause; the incident was eventually traced to a misconfigured network routing policy.",
+    "rootCause": "A network routing policy change caused cross-zone inter-service traffic to route sub-optimally, adding latency to all calls that crossed availability zones.",
+    "remediation": [
+      "Correlate the latency spike timeline with recent infrastructure or deployment changes across all services",
+      "Check network routing policies, firewall rules, and load balancer configurations for recent modifications",
+      "Review inter-service call latency broken down by availability zone to isolate the failure boundary"
+    ]
   }
 ]
