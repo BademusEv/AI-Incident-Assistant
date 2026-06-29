@@ -99,7 +99,7 @@ Before the current incident is added to the prompt, `PiiScrubber` masks common P
 
 The service still validates the result in Java:
 
-- category and severity must be present
+- category and severity must be present and map to known enum values; casing is normalized during structured conversion
 - summary must be non-blank
 - hypotheses must be non-empty and capped at 3
 - every hypothesis must have 2 to 3 diagnostic next steps
