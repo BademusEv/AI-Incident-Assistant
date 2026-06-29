@@ -25,8 +25,8 @@ public class PiiScrubber {
     private static final Pattern PASSPORT_RU_STANDALONE_PATTERN = Pattern.compile("\\b\\d{4}\\s\\d{6}\\b");
     // US Social Security Number: xxx-xx-xxxx
     private static final Pattern SSN_PATTERN = Pattern.compile("\\b\\d{3}-\\d{2}-\\d{4}\\b");
-    private static final Pattern PHONE_PATTERN = Pattern.compile("\\b\\+?[\\d][\\d\\s\\-().]{6,14}[\\d]\\b");
-    private static final Pattern USER_ID_PATTERN = Pattern.compile("\\b(user_id|account_id|user|account|customer_id)\\s*[:=]\\s*\\d+");
+    private static final Pattern PHONE_PATTERN = Pattern.compile("\\b\\+?[\\d][\\d\\s\\-(). ]{6,14}+[\\d]\\b");
+    private static final Pattern USER_ID_PATTERN = Pattern.compile("\\b(user_id|userid|uid|account_id|customer_id|cust_id)\\s*[:=]\\s*\\d+");
 
     public ParsedIncident scrub(ParsedIncident incident) {
         if (incident.normalizedDescription() == null) {

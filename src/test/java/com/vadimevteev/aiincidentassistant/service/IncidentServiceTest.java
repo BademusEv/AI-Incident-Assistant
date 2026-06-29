@@ -14,6 +14,7 @@ import com.vadimevteev.aiincidentassistant.model.IncidentAnalysis;
 import com.vadimevteev.aiincidentassistant.model.IncidentCategory;
 import com.vadimevteev.aiincidentassistant.model.IncidentRequest;
 import com.vadimevteev.aiincidentassistant.model.IncidentResponse;
+import com.vadimevteev.aiincidentassistant.model.ParsedIncident;
 import com.vadimevteev.aiincidentassistant.model.Severity;
 import com.vadimevteev.aiincidentassistant.validation.ResponseValidator;
 import com.vadimevteev.aiincidentassistant.validation.SecurityPolicyValidator;
@@ -51,7 +52,8 @@ class IncidentServiceTest {
                 incidentAiClient,
                 responseValidator,
                 new SecurityPolicyValidator(),
-                2
+                2,
+                0L
         );
 
         when(contextProvider.findRelevantContext(any()))
@@ -153,6 +155,24 @@ class IncidentServiceTest {
                         List.of("Check provider latency metrics", "Inspect payment-service timeout logs")
                 ))
         );
+    }
+
+    @Test
+    void piiTokensAreExcludedFromRetrievalKeywordsAfterScrubAndReparse() {
+        when(incidentAiClient.analyze(any())).thenReturn(validPaymentAnalysis());
+
+        incidentService.analyze(new IncidentRequest("User john.doe@example.com cannot pay by card."));
+
+        ArgumentCaptor<ParsedIncident> captor = ArgumentCaptor.forClass(ParsedIncident.class);
+        verify(contextProvider).findRelevantContext(captor.capture());
+        ParsedIncident captured = captor.getValue();
+
+        assertThat(captured.normalizedDescription())
+                .contains("[EMAIL]")
+                .doesNotContain("john.doe@example.com");
+        assertThat(captured.keywords())
+                .doesNotContain("john", "doe", "example", "email")
+                .contains("card");
     }
 
     private PastIncident paymentIncident() {

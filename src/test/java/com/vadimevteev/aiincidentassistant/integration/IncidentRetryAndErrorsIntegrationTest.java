@@ -54,7 +54,7 @@ class IncidentRetryAndErrorsIntegrationTest extends BaseIntegrationTest {
 
         String body = analyze(RAW_INCIDENT_TEXT + " payment card checkout timeout")
                 .andExpect(status().isBadGateway())
-                .andExpect(jsonPath("$.detail").value("AI analysis failed after 2 attempts"))
+                .andExpect(jsonPath("$.detail").value("Incident analysis could not be completed"))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
@@ -144,7 +144,7 @@ class IncidentRetryAndErrorsIntegrationTest extends BaseIntegrationTest {
 
         String body = analyze("Card payment checkout timeout is affecting customers.")
                 .andExpect(status().isBadGateway())
-                .andExpect(jsonPath("$.detail").value("AI analysis failed after 2 attempts"))
+                .andExpect(jsonPath("$.detail").value("Incident analysis could not be completed"))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
@@ -165,7 +165,7 @@ class IncidentRetryAndErrorsIntegrationTest extends BaseIntegrationTest {
 
         analyze("Card payment checkout timeout is affecting customers.")
                 .andExpect(status().isBadGateway())
-                .andExpect(jsonPath("$.detail").value("AI analysis failed after 2 attempts"));
+                .andExpect(jsonPath("$.detail").value("Incident analysis could not be completed"));
 
         verify(incidentAiClient, times(2)).analyze(any());
     }
@@ -186,7 +186,7 @@ class IncidentRetryAndErrorsIntegrationTest extends BaseIntegrationTest {
 
         analyze("Card payment checkout timeout is affecting customers.")
                 .andExpect(status().isBadGateway())
-                .andExpect(jsonPath("$.detail").value("AI analysis failed after 2 attempts"));
+                .andExpect(jsonPath("$.detail").value("Incident analysis could not be completed"));
 
         verify(incidentAiClient, times(2)).analyze(any());
     }
@@ -212,7 +212,7 @@ class IncidentRetryAndErrorsIntegrationTest extends BaseIntegrationTest {
 
         analyze("Card payment checkout timeout is affecting customers.")
                 .andExpect(status().isBadGateway())
-                .andExpect(jsonPath("$.detail").value("AI analysis failed after 2 attempts"));
+                .andExpect(jsonPath("$.detail").value("Incident analysis could not be completed"));
 
         verify(incidentAiClient, times(2)).analyze(any());
     }

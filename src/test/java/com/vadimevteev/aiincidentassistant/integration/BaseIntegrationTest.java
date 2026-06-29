@@ -24,7 +24,10 @@ import java.util.List;
 import static org.mockito.Mockito.reset;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
-@SpringBootTest(properties = "spring.ai.openai.api-key=test-api-key")
+@SpringBootTest(properties = {
+        "spring.ai.openai.api-key=test-api-key",
+        "incident-assistant.retry.initial-delay-ms=0"
+})
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 abstract class BaseIntegrationTest {

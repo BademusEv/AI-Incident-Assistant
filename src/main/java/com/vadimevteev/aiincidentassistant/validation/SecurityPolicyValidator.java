@@ -3,11 +3,14 @@ package com.vadimevteev.aiincidentassistant.validation;
 import com.vadimevteev.aiincidentassistant.exception.InvalidAiResponseException;
 import com.vadimevteev.aiincidentassistant.model.Hypothesis;
 import com.vadimevteev.aiincidentassistant.model.IncidentAnalysis;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.text.Normalizer;
 import java.util.List;
 import java.util.Locale;
 
+@Slf4j
 @Component
 public class SecurityPolicyValidator {
 
@@ -78,9 +81,10 @@ public class SecurityPolicyValidator {
             return;
         }
 
-        String normalized = value.toLowerCase(Locale.ROOT);
+        String normalized = Normalizer.normalize(value, Normalizer.Form.NFKC).toLowerCase(Locale.ROOT);
         boolean forbidden = FORBIDDEN_PHRASES.stream().anyMatch(normalized::contains);
         if (forbidden) {
+            log.warn("Security policy violation in LLM output field '{}'", field);
             throw new InvalidAiResponseException(
                     field + " contains forbidden security-sensitive content",
                     "AI_OUTPUT_SECURITY_POLICY_VIOLATION"

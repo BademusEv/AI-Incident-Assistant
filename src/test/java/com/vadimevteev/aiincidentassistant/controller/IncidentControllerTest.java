@@ -96,7 +96,7 @@ class IncidentControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new RequestBody("Customers cannot pay by card."))))
                 .andExpect(status().isBadGateway())
-                .andExpect(jsonPath("$.detail").value("AI analysis failed after 2 attempts"));
+                .andExpect(jsonPath("$.detail").value("Incident analysis could not be completed"));
     }
 
     private record RequestBody(String description) {

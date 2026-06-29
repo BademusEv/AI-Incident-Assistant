@@ -16,6 +16,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ProblemDetail handleValidation(MethodArgumentNotValidException exception) {
+        log.debug("Request validation failed: {} field error(s)", exception.getBindingResult().getFieldErrorCount());
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(
                 HttpStatus.BAD_REQUEST,
                 "Request validation failed"
@@ -38,7 +39,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(AiProviderException.class)
     public ProblemDetail handleAiProvider(AiProviderException exception) {
-        log.warn("AI provider failure");
+        log.warn("AI provider failure: {}", exception.getMessage());
         return ProblemDetail.forStatusAndDetail(
                 HttpStatus.SERVICE_UNAVAILABLE,
                 "AI provider is temporarily unavailable"
@@ -47,10 +48,10 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(IncidentAnalysisFailedException.class)
     public ProblemDetail handleAnalysisFailed(IncidentAnalysisFailedException exception) {
-        log.warn("Incident analysis failed: {}", exception.getMessage());
+        log.warn("Incident analysis failed: {}", exception.getMessage(), exception);
         return ProblemDetail.forStatusAndDetail(
                 HttpStatus.BAD_GATEWAY,
-                exception.getMessage()
+                "Incident analysis could not be completed"
         );
     }
 

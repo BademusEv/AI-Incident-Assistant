@@ -83,7 +83,7 @@ class IncidentSecurityPolicyIntegrationTest extends BaseIntegrationTest {
 
         analyze("Card payment checkout timeout is affecting customers.")
                 .andExpect(status().isBadGateway())
-                .andExpect(jsonPath("$.detail").value("AI analysis failed after 2 attempts"));
+                .andExpect(jsonPath("$.detail").value("Incident analysis could not be completed"));
 
         verify(incidentAiClient, times(2)).analyze(any());
     }

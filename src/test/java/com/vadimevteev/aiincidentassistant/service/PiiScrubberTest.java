@@ -110,7 +110,10 @@ class PiiScrubberTest {
     }
 
     @Test
-    void keywordsRemainTheSameAfterScrubbing() {
+    void keywordsArePreservedByPiiScrubber() {
+        // PiiScrubber intentionally preserves the pre-scrub keyword set unchanged.
+        // IncidentService re-derives keywords from scrubbed text (with placeholders stripped)
+        // so PII tokens never reach ContextProvider — see IncidentServiceTest for that assertion.
         ParsedIncident incident = incident("Payment card timeout for john.doe@example.com and 4111111111111111.");
 
         ParsedIncident scrubbed = piiScrubber.scrub(incident);

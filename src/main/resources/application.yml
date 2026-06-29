@@ -16,3 +16,4 @@ spring:
 incident-assistant:
   retry:
     max-attempts: 2
+    initial-delay-ms: 500

@@ -62,6 +62,7 @@ public class ContextProvider {
                 .toList();
         int maxScore = scoredIncidents.isEmpty() ? 0 : scoredIncidents.get(0).score();
 
+        log.debug("Keyword retrieval matched {} past incident(s) (top score: {})", relevantIncidents.size(), maxScore);
         return new IncidentContext(systemDescription, relevantIncidents, maxScore);
     }
 

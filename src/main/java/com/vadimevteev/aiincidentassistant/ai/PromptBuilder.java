@@ -39,15 +39,7 @@ public class PromptBuilder {
             }
             """;
 
-    public IncidentPrompt build(ParsedIncident incident, IncidentContext context) {
-        return buildPrompt(incident, context, null);
-    }
-
-    public IncidentPrompt buildRetryPrompt(ParsedIncident incident, IncidentContext context, String validationError) {
-        return buildPrompt(incident, context, validationError);
-    }
-
-    private IncidentPrompt buildPrompt(ParsedIncident incident, IncidentContext context, String validationError) {
+    public IncidentPrompt build(ParsedIncident incident, IncidentContext context, String validationError) {
         StringBuilder userMessage = new StringBuilder();
 
         userMessage.append("""
@@ -69,7 +61,7 @@ public class PromptBuilder {
         userMessage.append("""
                 <current_incident_untrusted_data>
                 """);
-        userMessage.append(incident.normalizedDescription()).append("\n</current_incident_untrusted_data>\n\n");
+        userMessage.append(sanitizeForPrompt(incident.normalizedDescription())).append("\n</current_incident_untrusted_data>\n\n");
 
         if (validationError != null && !validationError.isBlank()) {
             userMessage.append("""
@@ -81,6 +73,10 @@ public class PromptBuilder {
         }
 
         return new IncidentPrompt(SYSTEM_MESSAGE, userMessage.toString());
+    }
+
+    private static String sanitizeForPrompt(String text) {
+        return text.replace("<", "&lt;").replace(">", "&gt;");
     }
 
     private String formatIncident(PastIncident incident) {

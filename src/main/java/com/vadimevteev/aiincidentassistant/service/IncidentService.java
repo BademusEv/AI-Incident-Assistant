@@ -17,9 +17,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.util.regex.Pattern;
+
 @Slf4j
 @Service
 public class IncidentService {
+
+    private static final Pattern PII_PLACEHOLDER = Pattern.compile("\\[[A-Z_]+\\]");
+    private static final long MAX_RETRY_DELAY_MS = 30_000L;
 
     private final InputParser inputParser;
     private final PiiScrubber piiScrubber;
@@ -29,6 +34,7 @@ public class IncidentService {
     private final ResponseValidator responseValidator;
     private final SecurityPolicyValidator securityPolicyValidator;
     private final int maxAttempts;
+    private final long initialRetryDelayMs;
 
     public IncidentService(
             InputParser inputParser,
@@ -38,7 +44,8 @@ public class IncidentService {
             IncidentAiClient incidentAiClient,
             ResponseValidator responseValidator,
             SecurityPolicyValidator securityPolicyValidator,
-            @Value("${incident-assistant.retry.max-attempts:2}") int maxAttempts
+            @Value("${incident-assistant.retry.max-attempts:2}") int maxAttempts,
+            @Value("${incident-assistant.retry.initial-delay-ms:0}") long initialRetryDelayMs
     ) {
         this.inputParser = inputParser;
         this.piiScrubber = piiScrubber;
@@ -48,24 +55,28 @@ public class IncidentService {
         this.responseValidator = responseValidator;
         this.securityPolicyValidator = securityPolicyValidator;
         this.maxAttempts = Math.max(1, maxAttempts);
+        this.initialRetryDelayMs = Math.max(0, initialRetryDelayMs);
     }
 
     public IncidentResponse analyze(IncidentRequest request) {
         ParsedIncident parsedIncident = inputParser.parse(request.description());
         parsedIncident = piiScrubber.scrub(parsedIncident);
+        // Re-derive keywords from the scrubbed text, but strip PII placeholders first so tokens
+        // like "email" (from [EMAIL]) or "card" (from [CARD_NUMBER]) don't pollute retrieval.
+        String scrubbedDescription = parsedIncident.normalizedDescription();
+        String descriptionWithoutPlaceholders = PII_PLACEHOLDER.matcher(scrubbedDescription).replaceAll(" ");
+        parsedIncident = new ParsedIncident(scrubbedDescription, inputParser.parse(descriptionWithoutPlaceholders).keywords());
         IncidentContext context = contextProvider.findRelevantContext(parsedIncident);
 
         String validationError = null;
         for (int attempt = 1; attempt <= maxAttempts; attempt++) {
-            IncidentPrompt prompt = attempt == 1
-                    ? promptBuilder.build(parsedIncident, context)
-                    : promptBuilder.buildRetryPrompt(parsedIncident, context, validationError);
+            IncidentPrompt prompt = promptBuilder.build(parsedIncident, context, attempt == 1 ? null : validationError);
 
             try {
                 IncidentAnalysis analysis = incidentAiClient.analyze(prompt);
                 responseValidator.validate(analysis);
                 securityPolicyValidator.validate(analysis);
-                log.info("Incident analysis succeeded on attempt {} with context {}", attempt, context.references());
+                log.info("Incident analysis succeeded on attempt {} with context {} (top match score: {})", attempt, context.references(), context.topMatchScore());
                 return IncidentResponse.from(analysis, context.references(), context.topMatchScore());
             } catch (InvalidAiResponseException e) {
                 validationError = e.safeRetryMessage();
@@ -73,9 +84,23 @@ public class IncidentService {
                 if (attempt == maxAttempts) {
                     throw new IncidentAnalysisFailedException("AI analysis failed after " + maxAttempts + " attempts", e);
                 }
+                sleepWithBackoff(attempt);
             }
         }
 
         throw new IncidentAnalysisFailedException("AI analysis failed before producing a response");
+    }
+
+    private void sleepWithBackoff(int attempt) {
+        if (initialRetryDelayMs <= 0) {
+            return;
+        }
+        long delay = Math.min(initialRetryDelayMs * (1L << Math.min(attempt - 1, 30)), MAX_RETRY_DELAY_MS);
+        try {
+            Thread.sleep(delay);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IncidentAnalysisFailedException("Analysis interrupted during retry backoff", e);
+        }
     }
 }
